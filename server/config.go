@@ -325,7 +325,7 @@ func ValidateConfig(logger *zap.Logger, c Config) map[string]string {
 
 	// Log warnings for insecure default parameter values.
 	if c.GetConsole().Username == "admin" {
-		logger.Warn("WARNING: insecure default parameter value, change this for production!", zap.String("param", "console.username"))
+		logger.Warn("WARNING: insecure default parameter value, change this for production! username ====", zap.String("param", "console.username"))
 		configWarnings["console.username"] = "Insecure default parameter value, change this for production!"
 	}
 	if c.GetConsole().Password == "password" {
