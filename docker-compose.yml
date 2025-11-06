@@ -9,14 +9,34 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-ecx"
-      - >
-          /nakama/nakama migrate up --database.address $$DATABASE_URL &&
-          exec /nakama/nakama
-          --name nakama1
-          --database.address $$DATABASE_URL
-          --logger.level DEBUG
-          --session.token_expiry_sec 7200
-          --metrics.prometheus_port 9100
+      - |
+          echo "======================================"
+          echo "🚀 Starting Nakama DEBUG MODE"
+          echo "🗄️  Connecting to Database:"
+          echo "$DATABASE_URL" | sed -E 's#://([^:]+):([^@]+)@#://\1:****@#'
+          echo "======================================"
+
+          echo "🔍 Extracting DB host and port..."
+          DB_HOST=$(echo "$DATABASE_URL" | sed -E 's#.*@([^:/]+):([0-9]+)/.*#\1#')
+          DB_PORT=$(echo "$DATABASE_URL" | sed -E 's#.*@([^:/]+):([0-9]+)/.*#\2#')
+          echo "   Host: $DB_HOST"
+          echo "   Port: $DB_PORT"
+
+          echo "🔌 Testing connectivity..."
+          timeout 5 sh -c "nc -zv $DB_HOST $DB_PORT" && echo "✅ Database reachable" || echo "❌ Database unreachable"
+
+          echo "======================================"
+          echo "🏗️  Running migrations..."
+          /nakama/nakama migrate up --database.address "$DATABASE_URL" || echo "❌ Migration failed (check DB connection)"
+
+          echo "======================================"
+          echo "🏁 Launching Nakama server..."
+          exec /nakama/nakama \
+            --name nakama1 \
+            --database.address "$DATABASE_URL" \
+            --logger.level DEBUG \
+            --session.token_expiry_sec 7200 \
+            --metrics.prometheus_port 9100
     ports:
       - "7349:7349"
       - "7350:7350"
