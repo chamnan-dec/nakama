@@ -2,7 +2,7 @@
 FROM golang:1.25.0-bookworm AS builder
 
 WORKDIR /app
-COPY ./build /app/build
+COPY . /app/build
 WORKDIR /app/build
 
 # build Nakama binary
