@@ -1,59 +1,42 @@
+version: "3.8"
+
 services:
   nakama:
     image: registry.heroiclabs.com/heroiclabs/nakama:3.30.0
     restart: "no"
     environment:
-      - DATABASE_URL=postgresql://postgres:PVzppFXsDTIJHwYWziXmpItGKVZQCvQW@shinkansen.proxy.rlwy.net:37342/railway?sslmode=require&options=-c%20search_path="sook-app"
+      - DATABASE_URL=${DATABASE_URL}
     entrypoint:
       - "/bin/sh"
       - "-ecx"
       - >
           /nakama/nakama migrate up --database.address $$DATABASE_URL &&
-          exec /nakama/nakama --name nakama1 --database.address $$DATABASE_URL --logger.level DEBUG --session.token_expiry_sec 7200 --metrics.prometheus_port 9100
-    volumes:
-      - ./:/nakama/data
-    expose:
-      - "7349"
-      - "7350"
-      - "7351"
-      - "9100"
+          exec /nakama/nakama
+          --name nakama1
+          --database.address $$DATABASE_URL
+          --logger.level DEBUG
+          --session.token_expiry_sec 7200
+          --metrics.prometheus_port 9100
     ports:
       - "7349:7349"
       - "7350:7350"
       - "7351:7351"
+      - "9100:9100"
     healthcheck:
       test: ["CMD", "/nakama/nakama", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
-    depends_on:
-      prometheus:
-        condition: service_started
 
   prometheus:
     image: prom/prometheus
-    entrypoint: /bin/sh -c
-    command: |
-      'sh -s <<EOF
-        cat > ./prometheus.yml <<EON
-      global:
-        scrape_interval:     15s
-        evaluation_interval: 15s
-
-      scrape_configs:
-        - job_name: prometheus
-          static_configs:
-          - targets: ['localhost:9090']
-
-        - job_name: nakama
-          metrics_path: /
-          static_configs:
-          - targets: ['nakama:9100']
-      EON
-      prometheus --config.file=./prometheus.yml
-      EOF'
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - '9090:9090'
+      - "9090:9090"
 
 volumes:
-  data:
+  prometheus_data:
