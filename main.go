@@ -151,16 +151,7 @@ func main() {
 			logger.Fatal("Bad connection URL", zap.Error(err))
 		}
 		redactedAddresses = append(redactedAddresses, strings.TrimPrefix(parsedURL.Redacted(), "postgres://"))
-		startupLogger.Info("Debug: Attempting to connect to database",
-			zap.String("full_url", parsedURL.Redacted()),
-			zap.String("host", parsedURL.Hostname()),
-			zap.String("port", parsedURL.Port()),
-			zap.String("user", parsedURL.User.Username()),
-			zap.String("database", strings.TrimPrefix(parsedURL.Path, "/")),
-			zap.String("sslmode", parsedURL.Query().Get("sslmode")),
-		)
 	}
-
 	startupLogger.Info("Database connections", zap.Strings("dsns", redactedAddresses))
 
 	db := server.DbConnect(ctx, startupLogger, config, false)
